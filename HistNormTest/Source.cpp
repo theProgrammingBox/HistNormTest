@@ -16,7 +16,7 @@ int main()
 {
 	srand(time(nullptr));
 
-	const int batchSize = 4;
+	const int batchSize = 16;
 	const float learningRate = 0.01f;
 	const float epsilon = 1e-16f;
 	const float meanBeta = 0.9f;
@@ -64,10 +64,12 @@ int main()
 			InputNormMean += input;
 			float delta = input - correctInputNormMean;
 			InputNormVariance += delta * delta;
-			float inputNorm = (input - correctInputNormMean) * InvSqrt(correctInputNormVariance + epsilon);
-			//float inputNorm = (input - accumulatedInputNormMean) * InvSqrt(accumulatedInputNormVariance + epsilon);
+			float shiftedInput = input - correctInputNormMean;
+			float inputNorm = shiftedInput * correctInputNormVariance;
 			float output = inputNorm * weight + bias;
 			float error = target - output;
+			float inputNormGradient = error * weight;
+			float inputGradient = inputNormGradient * correctInputNormVariance;
 			weightGradient += inputNorm * error;
 			biasGradient += error;
 
@@ -85,7 +87,7 @@ int main()
 
 		InputNormVariance /= batchSize;
 		accumulatedInputNormVariance = normVarianceBeta * accumulatedInputNormVariance + (1 - normVarianceBeta) * InputNormVariance;
-		correctInputNormVariance = accumulatedInputNormVariance / (1 - normVarianceExpDecay);
+		correctInputNormVariance = InvSqrt(accumulatedInputNormVariance / (1 - normVarianceExpDecay) + epsilon);
 
 		meanExpDecay *= meanBeta;
 		varianceExpDecay *= varianceBeta;
