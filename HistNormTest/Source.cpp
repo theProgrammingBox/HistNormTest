@@ -1,5 +1,16 @@
 #include <iostream>
 
+/*
+IMPORTANT LESSONS:
+- the exponential decay terms are necessary because we do not know the starting values of the means and variances.
+It basically just pretends that the starting values are the starting entries. It helps stabilize the initial values resulting in stable learning.
+If you know the starting values (use some sort of initialization run), you can try to remove the exponential decay terms.
+- Given this simple example, it never reaches 0 error, but gets close to 0.0001.
+The trade off for this small error is that there is no need for batch normalization.
+We just use the history of the means and variances to normalize the inputs.
+This is a pseudo batch normalization for models that can't really use batch normalization.
+*/
+
 float InvSqrt(float number)
 {
 	long i = 0x5F1FFFF9 - (*(long*)&number >> 1);
@@ -16,8 +27,8 @@ int main()
 {
 	srand(time(nullptr));
 
-	const int batchSize = 16;
-	const float learningRate = 0.01f;
+	const int batchSize = 1;
+	const float learningRate = 0.1f;
 	const float epsilon = 1e-16f;
 	const float meanBeta = 0.9f;
 	const float varianceBeta = 0.999f;
