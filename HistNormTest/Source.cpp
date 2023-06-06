@@ -27,95 +27,55 @@ int main()
 {
 	srand(time(nullptr));
 
-	const int batchSize = 1;
-	const float learningRate = 0.1f;
-	const float epsilon = 1e-16f;
 	const float meanBeta = 0.9f;
-	const float varianceBeta = 0.999f;
-	const float normMeanBeta = 0.999f;
-	const float normVarianceBeta = 0.999f;
-	float meanExpDecay = 1;
-	float varianceExpDecay = 1;
-	float normMeanExpDecay = 1;
-	float normVarianceExpDecay = 1;
-
-	float correctInputNormMean = 0;
-	float accumulatedInputNormMean = 0;
-	float InputNormMean;
-
-	float correctInputNormVariance = 0;
-	float accumulatedInputNormVariance = 0;
-	float InputNormVariance;
-
-	float weight = 1;
-	float weightGradient;
+	const float variationBeta = 0.999f;
+	float meanDecay = 1;
+	float variationDecay = 1;
+	float correctedMean = 0;
+	float correctedVariation = 1;
 
 	float bias = 0;
-	float biasGradient;
+	float sum;
+	float uncorrectedMean = 0;
+	float uncorrectedVariation = 0;
+	float meanSum;
+	float variationSum;
 
-	float weightGradientMean = 0;
-	float weightGradientVariance = 0;
-
-	float biasGradientMean = 0;
-	float biasGradientVariance = 0;
-
-	while (true)
+	for (int j = 0; j < 10; ++j)
 	{
-		InputNormMean = 0;
-		InputNormVariance = 0;
-		weightGradient = 0;
-		biasGradient = 0;
-
-		float avgErr = 0;
-		for (int batch = 0; batch < batchSize; ++batch)
+		sum = bias;
+		meanSum = 0;
+		variationSum = 0;
+		for (int i = 0; i < 10; ++i)
 		{
-			float input = RandomFloat();
-			float target = input * 2 + 2;
+			// normalize
+			sum = (sum - correctedMean) * correctedVariation;
+			printf("norm: %f\n", sum);
 
-			InputNormMean += input;
-			float delta = input - correctInputNormMean;
-			InputNormVariance += delta * delta;
-			float shiftedInput = input - correctInputNormMean;
-			float inputNorm = shiftedInput * correctInputNormVariance;
-			float output = inputNorm * weight + bias;
-			float error = target - output;
-			float inputNormGradient = error * weight;
-			float inputGradient = inputNormGradient * correctInputNormVariance;
-			weightGradient += inputNorm * error;
-			biasGradient += error;
+			// add random float
+			float a = RandomFloat();
+			printf("%f + %f = %f\n", sum, a, sum + a);
+			sum += a;
 
-			avgErr += abs(error);
+			// update mean and variance
+			meanSum += sum;
+			float delta = sum - correctedMean;
+			variationSum += delta * delta;
 		}
 
-		printf("Error: %f\n", avgErr / batchSize);
+		correctedMean = meanSum / 10;
+		correctedVariation = InvSqrt(variationSum / 10);
 
-		normMeanExpDecay *= normMeanBeta;
-		normVarianceExpDecay *= normVarianceBeta;
+		/*meanDecay *= meanBeta;
+		variationDecay *= variationBeta;
 
-		InputNormMean /= batchSize;
-		accumulatedInputNormMean = normMeanBeta * accumulatedInputNormMean + (1 - normMeanBeta) * InputNormMean;
-		correctInputNormMean = accumulatedInputNormMean / (1 - normMeanExpDecay);
+		uncorrectedMean = meanBeta * uncorrectedMean + (1 - meanBeta) * (meanSum / 3);
+		float correctedMean = uncorrectedMean / (1 - meanDecay);
+		uncorrectedVariation = variationBeta * uncorrectedVariation + (1 - variationBeta) * (variationSum / 3);
+		float correctedVariation = 1 / (uncorrectedVariation / (1 - variationDecay));*/
 
-		InputNormVariance /= batchSize;
-		accumulatedInputNormVariance = normVarianceBeta * accumulatedInputNormVariance + (1 - normVarianceBeta) * InputNormVariance;
-		correctInputNormVariance = InvSqrt(accumulatedInputNormVariance / (1 - normVarianceExpDecay) + epsilon);
-
-		meanExpDecay *= meanBeta;
-		varianceExpDecay *= varianceBeta;
-
-		weightGradient /= batchSize;
-		weightGradientMean = meanBeta * weightGradientMean + (1 - meanBeta) * weightGradient;
-		weightGradientVariance = varianceBeta * weightGradientVariance + (1 - varianceBeta) * weightGradient * weightGradient;
-		float weightGradientMeanCorrected = weightGradientMean / (1 - meanExpDecay);
-		float weightGradientVarianceCorrected = weightGradientVariance / (1 - varianceExpDecay);
-		weight += learningRate * weightGradientMeanCorrected * InvSqrt(weightGradientVarianceCorrected + epsilon);
-
-		biasGradient /= batchSize;
-		biasGradientMean = meanBeta * biasGradientMean + (1 - meanBeta) * biasGradient;
-		biasGradientVariance = varianceBeta * biasGradientVariance + (1 - varianceBeta) * biasGradient * biasGradient;
-		float biasGradientMeanCorrected = biasGradientMean / (1 - meanExpDecay);
-		float biasGradientVarianceCorrected = biasGradientVariance / (1 - varianceExpDecay);
-		bias += learningRate * biasGradientMeanCorrected * InvSqrt(biasGradientVarianceCorrected + epsilon);
+		printf("Mean: %f\n", correctedMean);
+		printf("Variance: %f\n\n", correctedVariation);
 	}
 
 	return 0;
