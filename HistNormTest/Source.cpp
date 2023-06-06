@@ -27,52 +27,45 @@ int main()
 {
 	srand(time(nullptr));
 
-	const float meanBeta = 0.9f;
+	const float epsilon = 1e-16f;
+	const float meanBeta = 0.999f;
 	const float variationBeta = 0.999f;
 	float meanDecay = 1;
 	float variationDecay = 1;
+
 	float correctedMean = 0;
 	float correctedVariation = 1;
-
-	float bias = 0;
-	float sum;
 	float uncorrectedMean = 0;
 	float uncorrectedVariation = 0;
-	float meanSum;
-	float variationSum;
 
-	for (int j = 0; j < 10; ++j)
+	float bias = 0;
+
+	for (int j = 0; j < 100; ++j)
 	{
-		sum = bias;
-		meanSum = 0;
-		variationSum = 0;
+		float sum = bias;
+		float meanSum = bias;
+		float variationSum = abs(bias - correctedMean);
 		for (int i = 0; i < 10; ++i)
 		{
-			// normalize
+			// normalize and update sum
 			sum = (sum - correctedMean) * correctedVariation;
-			printf("norm: %f\n", sum);
-
-			// add random float
 			float a = RandomFloat();
-			printf("%f + %f = %f\n", sum, a, sum + a);
+			printf("norm = %f + %f = %f\n", sum, a, sum + a);
 			sum += a;
 
 			// update mean and variance
 			meanSum += sum;
-			float delta = sum - correctedMean;
-			variationSum += delta * delta;
+			variationSum += abs(sum - correctedMean);
 		}
-
-		correctedMean = meanSum / 10;
-		correctedVariation = InvSqrt(variationSum / 10);
-
-		/*meanDecay *= meanBeta;
+		
+		meanDecay *= meanBeta;
 		variationDecay *= variationBeta;
 
-		uncorrectedMean = meanBeta * uncorrectedMean + (1 - meanBeta) * (meanSum / 3);
-		float correctedMean = uncorrectedMean / (1 - meanDecay);
-		uncorrectedVariation = variationBeta * uncorrectedVariation + (1 - variationBeta) * (variationSum / 3);
-		float correctedVariation = 1 / (uncorrectedVariation / (1 - variationDecay));*/
+		uncorrectedMean = meanBeta * uncorrectedMean + (1 - meanBeta) * (meanSum / 10);
+		uncorrectedVariation = variationBeta * uncorrectedVariation + (1 - variationBeta) * (variationSum / 10);
+
+		correctedMean = uncorrectedMean / (1 - meanDecay);
+		correctedVariation = (1 - variationDecay) / uncorrectedVariation;
 
 		printf("Mean: %f\n", correctedMean);
 		printf("Variance: %f\n\n", correctedVariation);
